@@ -100,9 +100,8 @@ do
 
 	if [ $t_s -eq 0 ]; then
 
-		case $step in
+		case "$step" in
 		P)
-			n_short_breaks=$((n_short_breaks + 1))
 			if [ $n_short_breaks -eq $n_short_breaks_tot ]; then
 				$n_exe "$s_start_long_break"
 				t_s=$t_s_long_break
@@ -120,7 +119,8 @@ do
 			;;
 
 		SB | LB)
-			if [ "$step" == "SB" ]; then
+			if [ "$step" = "SB" ]; then
+				n_short_breaks=$((n_short_breaks + 1))
 				$n_exe "$s_stop_short_break"
 			else
 				$n_exe "$s_stop_long_break"
