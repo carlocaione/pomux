@@ -9,6 +9,7 @@ color_short_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycol
 color_long_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycolor]"
 
 msg_start_session="Session started"
+msg_restart_session="Session restarted"
 msg_start_short_break="Start short break"
 msg_stop_short_break="Stop short break"
 msg_start_long_break="Start long break"
@@ -24,19 +25,27 @@ num_short_breaks=4
 pb_length=20
 pb_enable=1
 
-[ -f $file_lock ] && exit 0
-trap "{ rm -f $file_tmux_pipe $file_lock; exit 255; }" EXIT INT
-echo $$ > $file_lock
+if [ "$#" -ne 0 -a -f "$file_lock" ]; then
+	OPTIND=1
 
-wait_for_usr2()
-{
-	local catch=0
-	trap "catch=1" USR2
-	while [ "$catch" -eq 0 ]; do
-		sleep 1
+	while getopts "kr" opt; do
+		case "$opt" in
+		k)
+			kill $(cat $file_lock)
+			;;
+		r)
+			kill -USR2 $(cat $file_lock)
+			;;
+		esac
 	done
-	trap - USR2
-}
+fi
+
+if [ -f "$file_lock" ]; then
+	printf "pomux already running\n"
+	exit 0
+fi
+trap "{ rm -f $file_tmux_pipe $file_lock; exit 255; }" EXIT INT TERM
+echo $$ > $file_lock
 
 s_to_m()
 {
@@ -49,7 +58,6 @@ progress_bar()
 	local time_tot=$2
 	local pb_len=$3
 	local n_cur=$(($pb_len - ($time_left * $pb_len / $time_tot)))
-
 	local cnt=1
 
 	printf "%2d%% [" "$(($time_left * 100 / $time_tot))"
@@ -73,7 +81,6 @@ print_status()
 	local time_tot=$4
 	local pb_len=$5
 	local pb_enable=$6
-
 	local str=""
 
 	[ "$pb_enable" -ne 0 ] && str=$(progress_bar $time_left $time_tot $pb_len)
@@ -81,6 +88,32 @@ print_status()
 	str="$str $step"
 
 	printf $color "$str"
+}
+
+enable_reset()
+{
+	trap "reset=1" USR2
+	if [ "$reset" -eq 1 ]; then
+		step="P"
+		cur_step_sec=$time_session_sec
+		cur_step_sec_tot=$time_session_sec
+		cur_step_color=$color_session
+		n_short_breaks=0
+		reset=0
+		[ ! -z "$notify_exe" -a ! -z "$msg_restart_session" ] && $notify_exe "$msg_restart_session"
+	fi
+}
+
+wait_for_usr2()
+{
+	local catch=0
+
+	trap "catch=1" USR2
+	while [ "$catch" -eq 0 ]; do
+		sleep 1
+	done
+	trap - USR2
+	enable_reset
 }
 
 time_session_sec=$((time_session_min * 60))
@@ -92,9 +125,12 @@ cur_step_sec=$time_session_sec
 cur_step_sec_tot=$time_session_sec
 cur_step_color=$color_session
 n_short_breaks=0
+reset=0
 
 while true
 do
+	enable_reset
+
 	cur_step_sec=$((cur_step_sec - 1))
 	print_status $step $cur_step_color $cur_step_sec $cur_step_sec_tot $pb_length $pb_enable > $file_tmux_pipe
 
@@ -130,7 +166,7 @@ do
 			cur_step_color=$color_session
 			step="P"
 			wait_for_usr2
-			$notify_exe "$msg_start_session"
+			[ ! -z "$notify_exe" -a ! -z "$msg_start_session" ] && $notify_exe "$msg_start_session"
 			;;
 		esac
 
