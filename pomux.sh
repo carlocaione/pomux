@@ -6,7 +6,7 @@ time_long_break_min=1
 
 color_session="#[fg=mycolor,bg=mycolor]#[fg=default]%s#[fg=mycolor,bg=mycolor]"
 color_short_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycolor]"
-color_long_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycolor]"
+color_long_break="#[fg=mycolor,bg=mycolor]#[fg=blue,bold]%s#[fg=mycolor,bg=mycolor]"
 
 msg_start_session="Session started"
 msg_restart_session="Session restarted"
@@ -25,23 +25,36 @@ num_short_breaks=4
 pb_length=20
 pb_enable=1
 
-if [ "$#" -ne 0 -a -f "$file_lock" ]; then
+if [ "$#" -ne 0 ]; then
 	OPTIND=1
 
-	while getopts "kr" opt; do
+	while getopts "khr" opt; do
 		case "$opt" in
 		k)
-			kill $(cat $file_lock)
+			if [ -f "$file_lock" ]; then
+				kill $(cat $file_lock)
+				exit 0
+			else
+				printf "pomux not running"
+				exit 255
+			fi
 			;;
 		r)
-			kill -USR2 $(cat $file_lock)
+			if [ -f "$file_lock" ]; then
+				kill -USR2 $(cat $file_lock)
+				exit 0
+			fi
+			;;
+		h)
+			printf "usage: $0 [-k] kill pomux | [-r] start/restart pomux\n"
+			exit 0
 			;;
 		esac
 	done
 fi
 
 if [ -f "$file_lock" ]; then
-	printf "pomux already running\n"
+	printf "pomux already running"
 	exit 0
 fi
 trap "{ rm -f $file_tmux_pipe $file_lock; exit 255; }" EXIT INT TERM
@@ -85,7 +98,7 @@ print_status()
 
 	[ "$pb_enable" -ne 0 ] && str=$(progress_bar $time_left $time_tot $pb_len)
 	str="$str $(s_to_m $time_left)"
-	str="$str $step"
+	str="$str ($step)"
 
 	printf $color "$str"
 }
