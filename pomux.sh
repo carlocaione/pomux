@@ -5,16 +5,16 @@
 # Carlo Caione <carlo@caione.org>
 #
 
-time_session_min=25
+time_pomodoro_min=25
 time_short_break_min=5
 time_long_break_min=15
 
-color_session="#[fg=mycolor,bg=mycolor]#[fg=default]%s#[fg=mycolor,bg=mycolor]"
+color_pomodoro="#[fg=mycolor,bg=mycolor]#[fg=default]%s#[fg=mycolor,bg=mycolor]"
 color_short_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycolor]"
 color_long_break="#[fg=mycolor,bg=mycolor]#[fg=blue,bold]%s#[fg=mycolor,bg=mycolor]"
 
-msg_start_session="Session started"
-msg_restart_session="Session restarted"
+msg_start_pomodoro="Pomodoro started"
+msg_restart_pomodoro="Pomodoro restarted"
 msg_start_short_break="Start short break"
 msg_stop_short_break="Stop short break"
 msg_start_long_break="Start long break"
@@ -113,12 +113,12 @@ enable_reset()
 	trap "reset=1" USR2
 	if [ "$reset" -eq 1 ]; then
 		step="P"
-		cur_step_sec=$time_session_sec
-		cur_step_sec_tot=$time_session_sec
-		cur_step_color=$color_session
+		cur_step_sec=$time_pomodoro_sec
+		cur_step_sec_tot=$time_pomodoro_sec
+		cur_step_color=$color_pomodoro
 		n_short_breaks=0
 		reset=0
-		[ ! -z "$notify_exe" -a ! -z "$msg_restart_session" ] && $notify_exe "$msg_restart_session"
+		[ ! -z "$notify_exe" -a ! -z "$msg_restart_pomodoro" ] && $notify_exe "$msg_restart_pomodoro"
 	fi
 }
 
@@ -134,14 +134,14 @@ wait_for_usr2()
 	enable_reset
 }
 
-time_session_sec=$((time_session_min * 60))
+time_pomodoro_sec=$((time_pomodoro_min * 60))
 time_short_break_sec=$((time_short_break_min * 60))
 time_long_break_sec=$((time_long_break_min * 60))
 
 step="P"
-cur_step_sec=$time_session_sec
-cur_step_sec_tot=$time_session_sec
-cur_step_color=$color_session
+cur_step_sec=$time_pomodoro_sec
+cur_step_sec_tot=$time_pomodoro_sec
+cur_step_color=$color_pomodoro
 n_short_breaks=0
 reset=0
 
@@ -180,11 +180,11 @@ do
 				[ ! -z "$notify_exe" -a ! -z "$msg_stop_long_break" ] && $notify_exe "$msg_stop_long_break"
 			fi
 
-			cur_step_sec_tot=$time_session_sec
-			cur_step_color=$color_session
+			cur_step_sec_tot=$time_pomodoro_sec
+			cur_step_color=$color_pomodoro
 			step="P"
 			wait_for_usr2
-			[ ! -z "$notify_exe" -a ! -z "$msg_start_session" ] && $notify_exe "$msg_start_session"
+			[ ! -z "$notify_exe" -a ! -z "$msg_start_pomodoro" ] && $notify_exe "$msg_start_pomodoro"
 			;;
 		esac
 
