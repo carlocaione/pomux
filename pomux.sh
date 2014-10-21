@@ -1,8 +1,13 @@
 #!/bin/sh
+#
+# Pomodoro + Tmux = Pomux
+#
+# Carlo Caione <carlo@caione.org>
+#
 
-time_session_min=1
-time_short_break_min=1
-time_long_break_min=1
+time_session_min=25
+time_short_break_min=5
+time_long_break_min=15
 
 color_session="#[fg=mycolor,bg=mycolor]#[fg=default]%s#[fg=mycolor,bg=mycolor]"
 color_short_break="#[fg=mycolor,bg=mycolor]#[fg=red,bold]%s#[fg=mycolor,bg=mycolor]"
